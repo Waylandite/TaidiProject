@@ -47,4 +47,17 @@ def analyse_price_order():
     # print(map)
     # plt.plot(map.values())
     # plt.show()
-analyse_price_order()
+def analyse_region_order():
+    data = pd.read_csv("数据/order_train1.csv")
+    #首先分析各个销售区域的订单量（DataAnalysis文件分析的是数据行数，而不是订单量）（柱状图）
+    data.sales_region_code.value_counts().plot(kind="bar")
+    plt.title("sales_region_code")
+    plt.show()
+    #分析各个销售区域的订单量占比（饼状图）
+    data.sales_region_code.value_counts().plot(kind="pie")
+    plt.title("sales_region_code")
+    plt.show()
+
+if __name__=="__main__":
+  analyse_region_order()
+  pass

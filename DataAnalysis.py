@@ -49,7 +49,7 @@ def count_unique(data):
     for col in data.columns:
         print(col,":",data[col].nunique())
 if __name__=="__main__":
-    # sale_region_code_analy()
+    sale_region_code_analy()
     # item_code_analy()
     # first_cate_code_analy()
     # second_cate_code_analy()
