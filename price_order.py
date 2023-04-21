@@ -6,6 +6,7 @@ import numpy
 import  matplotlib.pyplot as plt
 import  matplotlib
 import seaborn as sns
+from sklearn.linear_model import LinearRegression
 
 
 def count_prices():
@@ -84,22 +85,39 @@ def count_total_price():
     price=data.item_price
     qty=data.ord_qty
     result=np.corrcoef(price,qty)
-    print(result)
-    hm = sns.heatmap(result,
-                     cbar=True,
-                     annot=True,  # 注入数字
-                     square=True,  # 单元格为正方形
-                     fmt='.2f',  # 字符串格式代码
-                     annot_kws={'size': 10},  # 当annot为True时，ax.text的关键字参数，即注入数字的字体大小
-                     yticklabels=["price","qry"],  # 列标签
-                     xticklabels=["price","qry"] # 行标签
-                     )
+    # hm = sns.heatmap(result,
+    #                  cbar=True,
+    #                  annot=True,  # 注入数字
+    #                  square=True,  # 单元格为正方形
+    #                  fmt='.2f',  # 字符串格式代码
+    #                  annot_kws={'size': 10},  # 当annot为True时，ax.text的关键字参数，即注入数字的字体大小
+    #                  yticklabels=["price","qry"],  # 列标签
+    #                  xticklabels=["price","qry"] # 行标签
+    #                  )
 
     df=data[['item_price','ord_qty']]
-    # sns.jointplot(x='item_price', y='ord_qty', data=df, kind='reg')
+    g=sns.jointplot(x='item_price', y='ord_qty', data=df, kind='reg')
     # sns.jointplot(x='item_price', y='ord_qty', data=df, kind='hex')
     # sns.jointplot(x='item_price', y='ord_qty', data=df, kind='kde')
+    regline = g.ax_joint.get_lines()[0]
+    regline.set_color('red')
+    regline.set_zorder(5)
+
     plt.show()
+
+def calculate_price_order():
+    data = pd.read_csv("数据/order_train1_clear.csv")
+    price = data.item_price
+    qty = data.ord_qty
+    price = price.values.reshape(-1, 1)
+    qty = qty.values.reshape(-1, 1)
+    lineModel = LinearRegression()
+    lineModel.fit(price, qty)
+
+    # coef_是系数，intercept_是截距
+    a1 = lineModel.coef_[0][0]
+    b = lineModel.intercept_[0]
+    print("y=%.4f*x+%.4f" % (a1, b))
 
 
 
@@ -107,4 +125,5 @@ if __name__=="__main__":
     # analyse_price_order()
     # cout_prices()
     count_total_price()
+    # calculate_price_order()
     pass
