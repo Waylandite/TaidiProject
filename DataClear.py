@@ -52,6 +52,17 @@ def paint_clear_box():
     plt.title("item_price boxplot")
     plt.show()
 
+# 没有负数
+def clear_negative_data():
+    data = pd.read_csv("数据/order_train1_clear.csv")
+    print(data.info())
+    data=data[data["ord_qty"]>0]
+    data=data[data["item_price"]>0]
+    print(data.info())
+    data.to_csv("数据/order_train1_clear.csv",index=False)
+
 if __name__=="__main__":
     # clear_data()
-    paint_clear_box()
+    # paint_clear_box()
+    clear_negative_data()
+    pass

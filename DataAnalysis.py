@@ -41,19 +41,20 @@ def item_price_analy():
     plt.title("item_price")
     plt.show()
 def order_qty_analy():
-    print(data_train.ord_qty.value_counts())
-    data_train.ord_qty.value_counts().plot(kind="bar")
-    plt.title("ord_qty")
-    plt.show()
+    # print(data_train.ord_qty.value_counts())
+    # data_train.ord_qty.value_counts().plot(kind="bar")
+    print(data_train.ord_qty.describe())
+    # plt.title("ord_qty")
+    # plt.show()
 def count_unique(data):
     for col in data.columns:
         print(col,":",data[col].nunique())
 if __name__=="__main__":
-    sale_region_code_analy()
+    # sale_region_code_analy()
     # item_code_analy()
     # first_cate_code_analy()
     # second_cate_code_analy()
     # sales_chan_name_analy()
     # item_price_analy()
-    # order_qty_analy()
+    order_qty_analy()
     pass
