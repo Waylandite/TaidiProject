@@ -46,7 +46,50 @@ def count_second_cate_prices():
     plt.show()
 
 
+def detail_second_cate():
+    # 读取数据
+    data = pd.read_csv("数据/order_train1_clear.csv")
+    # 按照品类分组，计算每个品类的订单需求量的平均值、中位数、标准差等统计指标
+    category_demand = data.groupby('second_cate_code')['ord_qty'].agg(['mean', 'median', 'std'])
+
+    # 绘制每个品类的订单需求量的分布直方图
+    category_list = data['second_cate_code'].unique().tolist()
+    plt.figure(figsize=(20, 10))
+    i=1
+    for category in category_list:
+        demand = data.loc[data['second_cate_code'] == category, 'ord_qty']
+        plt.subplot(2, 6,i)
+        plt.hist(demand, bins=30)
+        plt.title(f'Cate:{category}')
+        plt.xlabel('Demand')
+        plt.ylabel('Frequency')
+        i+=1
+    plt.show()
+
+def detail_first_cate():
+    # 读取数据
+    data = pd.read_csv("数据/order_train1_clear.csv")
+    # 按照品类分组，计算每个品类的订单需求量的平均值、中位数、标准差等统计指标
+    category_demand = data.groupby('first_cate_code')['ord_qty'].agg(['mean', 'median', 'std'])
+
+    # 绘制每个品类的订单需求量的分布直方图
+    category_list = data['first_cate_code'].unique().tolist()
+    plt.figure(figsize=(20, 10))
+    i=1
+    for category in category_list:
+        demand = data.loc[data['first_cate_code'] == category, 'ord_qty']
+        plt.subplot(2, 4,i)
+        plt.hist(demand, bins=30)
+        plt.title(f'Cate:{category}')
+        plt.xlabel('Demand')
+        plt.ylabel('Frequency')
+        i+=1
+    plt.show()
+
+
 if __name__=="__main__":
     # count_first_cate_prices()
     # count_second_cate_prices()
+    # detail_second_cate()
+    detail_first_cate()
     pass
