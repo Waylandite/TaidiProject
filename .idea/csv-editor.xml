@@ -10,6 +10,13 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="\数据\cate_order\second_cate_ord_qty.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="\数据\predict_sku1.csv">
           <value>
             <Attribute>
