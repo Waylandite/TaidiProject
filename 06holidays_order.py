@@ -22,7 +22,7 @@ def analayze_day_average():
     # 可视化结果
     fig, ax = plt.subplots(figsize=(10, 6))
     ax.scatter(holiday_mean_qty.index, holiday_mean_qty.values, label='Holidays',color='red')
-    ax.plot(holiday_mean_qty.index, holiday_mean_qty.values, label='Holidays', color='red')
+    #ax.plot(holiday_mean_qty.index, holiday_mean_qty.values, label='Holidays', color='red')
     ax.plot(nonholiday_mean_qty.index, nonholiday_mean_qty.values, label='Non-Holidays')
     ax.set_xlabel('Date')
     ax.set_ylabel('Average Demand')
@@ -44,8 +44,8 @@ def analayze_allyear_average():
         holiday_mean_qty = data[data['is_holiday'] == 1].groupby('order_date')['ord_qty'].mean()
         # 可视化结果
         fig, ax = plt.subplots(figsize=(10, 6))
-        # ax.scatter(holiday_mean_qty.index, holiday_mean_qty.values, label='Holidays',color='red')
-        ax.plot(holiday_mean_qty.index, holiday_mean_qty.values, label='Holidays', color='red')
+        ax.scatter(holiday_mean_qty.index, holiday_mean_qty.values, label='Holidays',color='red')
+        #ax.plot(holiday_mean_qty.index, holiday_mean_qty.values, label='Holidays', color='red')
         # 将2016、2017、2018、2019三年的平均ord_qty数据画在图上
         ax.plot(data['order_date'], a, label='Average')
         ax.set_xlabel('Date')
@@ -91,7 +91,7 @@ def analayze_2015year_average():
     ax.plot(data_2015['order_date'], arr, label='Average')
     ax.set_xlabel('Date')
     ax.set_ylabel('Average Demand')
-    ax.set_title('Impact of Holidays on Product Demand in 2016')
+    ax.set_title('Impact of Holidays on Product Demand in 2015')
     ax.legend()
     plt.show()
 def analayze_2016year_average():
@@ -107,6 +107,7 @@ def analayze_2016year_average():
         arr.append(average)
     data_2016['is_holiday'] = data_2016['order_date'].isin(holidays.China(years=[2016]))
     data_2016['is_holiday'] = data_2016['is_holiday'].astype(int)
+    data_holiday = data_2016[data_2016['is_holiday'] == 1]
     holiday_mean_qty = data_2016[data_2016['is_holiday'] == 1].groupby('order_date')['ord_qty'].mean()
     #数据可视化
     fig, ax = plt.subplots(figsize=(10, 6))
@@ -220,50 +221,13 @@ def analayze_2018year_average():
     ax.set_title('Impact of Holidays on Product Demand in 2018')
     ax.legend()
     plt.show()
-def analayze_2019year_average():
-    plt.rcParams['font.sans-serif'] = ['SimHei']  # 用来正常显示中文标签
-    # 加载数据集并进行数据预处理
-    data = pd.read_csv('数据/order_train1.csv')
-    data['order_date'] = pd.to_datetime(data['order_date'])
-    #计算2019年的平均需求量
-    data_2019 = data[data['order_date'].dt.year == 2019]
-    average=data_2019['ord_qty'].mean()
-    arr=[]
-    for i in range(196670):
-        arr.append(average)
-    data_2019['is_holiday'] = data_2019['order_date'].isin(holidays.China(years=[2019]))
-    data_2019['is_holiday'] = data_2019['is_holiday'].astype(int)
-    data_holiday = data_2019[data_2019['is_holiday'] == 1]
-    holiday_mean_qty = data_2019[data_2019['is_holiday'] == 1].groupby('order_date')['ord_qty'].mean()
-    #数据可视化
-    fig, ax = plt.subplots(figsize=(10, 6))
-    ax.scatter(holiday_mean_qty.index, holiday_mean_qty.values, label='Holidays', color='red')
-    #在x轴上写出2019年国际节假日和中国节假日的名称
-    for i in range(len(holiday_mean_qty.index)):
-        if holiday_mean_qty.index[i].month == 1:
-            ax.text(holiday_mean_qty.index[i], holiday_mean_qty.values[i], '元旦', fontsize=10)
-        if holiday_mean_qty.index[i].month == 2:
-            ax.text(holiday_mean_qty.index[i], holiday_mean_qty.values[i], '春节', fontsize=10)
-        if holiday_mean_qty.index[i].month == 4:
-            ax.text(holiday_mean_qty.index[i], holiday_mean_qty.values[i], '清明节', fontsize=10)
-        if holiday_mean_qty.index[i].month == 5:
-            if holiday_mean_qty.index[i].day == 1:
-                ax.text(holiday_mean_qty.index[i], holiday_mean_qty.values[i], '劳动节', fontsize=10)
-            if holiday_mean_qty.index[i].day == 30:
-                ax.text(holiday_mean_qty.index[i], holiday_mean_qty.values[i], '端午节', fontsize=10)
-        if holiday_mean_qty.index[i].month == 9:
-            ax.text(holiday_mean_qty.index[i], holiday_mean_qty.values[i], '中秋节', fontsize=10)
-        if holiday_mean_qty.index[i].month == 10:
-            ax.text(holiday_mean_qty.index[i], holiday_mean_qty.values[i], '国庆节', fontsize=10)
-        if holiday_mean_qty.index[i].month == 12:
-            ax.text(holiday_mean_qty.index[i], holiday_mean_qty.values[i], '圣诞节', fontsize=10)
-    ax.plot(data_2019['order_date'], arr, label='Average')
-    ax.set_xlabel('Date')
-    ax.set_ylabel('Average Demand')
-    ax.set_title('Impact of Holidays on Product Demand in 2019')
-    ax.legend()
-    plt.show()
+
 
 if __name__=="__main__":
-    analayze_allyear_average()
+    #analayze_day_average()
+    #analayze_allyear_average()
+    analayze_2015year_average()
+    analayze_2016year_average()
+    analayze_2017year_average()
+    analayze_2018year_average()
     pass
