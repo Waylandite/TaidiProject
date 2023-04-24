@@ -194,10 +194,108 @@ def Add201901():
     # 保存数据到tran3文件
     tempdf.to_csv('数据/order_train3.csv', index=False, encoding='utf-8')
 def feature_engineering():
-    pass
+    #滞后特征
+    lags = [1, 2, 3, 6, 12, 24, 36, 48, 60]
+    for lag in lags:
+        df['need_lag_' + str(lag)] = df.groupby(['sales_region_code', 'item_code', 'first_cate_code', 'second_cate_code', ], as_index=False)[
+            'ord_qty'].shift(lag).astype(np.float16)
+    #均值编码
+    s = df.groupby('item_code')['ord_qty'].transform('mean')
+    df['item_avg'] = df.groupby('item_code')['ord_qty'].transform('mean').astype(np.float16)
+    df['sales_region_code_need_avg'] = df.groupby('sales_region_code')['ord_qty'].transform('mean').astype(np.float16)
+    df['first_cate_code_need_avg'] = df.groupby('first_cate_code')['ord_qty'].transform('mean').astype(np.float16)
+    df['second_cate_code_need_avg'] = df.groupby('second_cate_code')['ord_qty'].transform('mean').astype(np.float16)
+    df['sales_chan_name_need_avg'] = df.groupby('sales_chan_name')['ord_qty'].transform('mean').astype(np.float16)
+    df['sales_region_code_item_code_need_avg'] = df.groupby(['item_code', 'sales_region_code'])['ord_qty'].transform('mean').astype(np.float16)
+    df['first_cate_code_item_code_need_avg'] = df.groupby(['first_cate_code', 'item_code'])['ord_qty'].transform('mean').astype(np.float16)
+    df['second_cate_code_item_code_need_avg'] = df.groupby(['second_cate_code', 'item_code'])['ord_qty'].transform('mean').astype(np.float16)
+    df['sales_chan_name_item_code_need_avg'] = df.groupby(['sales_chan_name', 'item_code'])['ord_qty'].transform('mean').astype(np.float16)
+    df['sales_region_code_first_cate_code_need_avg'] = df.groupby(['sales_region_code', 'first_cate_code'])['ord_qty'].transform('mean').astype(np.float16)
+    df['first_cate_code_second_cate_code_need_avg'] = df.groupby(['first_cate_code', 'second_cate_code'])['ord_qty'].transform('mean').astype(np.float16)
+    df['sales_chan_name_second_cate_code_need_avg'] = df.groupby(['sales_chan_name', 'second_cate_code'])['ord_qty'].transform('mean').astype(np.float16)
+    #滑动窗口统计
+    df['rolling_need_mean'] = df.groupby(['sales_region_code', 'item_code', 'first_cate_code', 'second_cate_code'])['ord_qty'].transform(
+        lambda x: x.rolling(window=7).mean()).astype(np.float16)
+    #开窗数据统计
+    df['expanding_need_mean'] = df.groupby(['sales_region_code', 'item_code', 'first_cate_code', 'second_cate_code'])['ord_qty'].transform(
+        lambda x: x.expanding(2).mean()).astype(np.float16)
+    #需求量趋势构建
+    df['daily_avg_need'] = df.groupby(['sales_region_code', 'item_code', 'first_cate_code', 'second_cate_code'])['ord_qty'].transform('mean').astype(
+        np.float16)
+    df['avg_need'] = df.groupby(['sales_region_code', 'item_code', 'first_cate_code', 'second_cate_code'])['ord_qty'].transform('mean').astype(np.float16)
+    df['need_trend'] = (df['daily_avg_need'] - df['avg_need']).astype(np.float16)
+    df.drop(['daily_avg_need', 'avg_need'], axis=1, inplace=True)
+    df.drop('order_date', axis=1, inplace=True)
+    #保存数据
+    newdf = df[df['D']>=60]
+    df.to_pickle('数据/train_data.pkl')
+
+#构建模型
+def model():
+    data = pd.read_pickle('数据/train_data.pkl')
+    valid = data[(data['D'] >= 1176) & (data['D'] < 1207)][['item_code', 'D', 'ord_qty']]
+    test = data[data['D'] >= 1207][['item_code', 'D', 'ord_qty']]  # 作为待预测的数据
+    eval_preds = test['ord_qty']  ## 待预测 目前全为0
+    valid_preds = valid['ord_qty']  # 这是已有真实标签需求量1175到1206，31天间隔的真实数据
+    states = [101, 102, 103, 104, 105]
+    # 对五个销售区域分别建模并进行训练
+    for store in states:
+       try:
+           df = data[data['sales_region_code'] == store]
+
+           # Split the data
+           X_train, y_train = df[df['D'] < 1176].drop('ord_qty', axis=1), df[df['D'] < 1176]['ord_qty']
+           X_valid, y_valid = df[(df['D'] >= 1176) & (df['D'] < 1207)].drop('ord_qty', axis=1), \
+                              df[(df['D'] >= 1176) & (df['D'] < 1207)]['ord_qty']
+           X_test = df[df['D'] >= 1207].drop('ord_qty', axis=1)
+
+           # Train and validate
+           model = LGBMRegressor(
+               n_estimators=1000,
+               learning_rate=0.3,
+               subsample=0.8,
+               colsample_bytree=0.8,
+               max_depth=8,
+               num_leaves=50,
+               min_child_weight=300
+           )
+           print('*****Prediction for 销售区域: {}*****'.format(store))
+           model.fit(X_train, y_train, eval_set=[(X_train, y_train), (X_valid, y_valid)],
+                     eval_metric='rmse', verbose=20, early_stopping_rounds=20)
+           valid_preds[X_valid.index] = model.predict(X_valid)
+           eval_preds[X_test.index] = model.predict(X_test)
+           filename = "模型/" + "model_" + str(store) + ".pkl"
+           # save model
+           joblib.dump(model, filename)
+           del model, X_train, y_train, X_valid, y_valid
+       except:
+        del model, X_train, y_train, X_valid, y_valid
+        continue
+def test():
+    model = joblib.load("模型/model_101.pkl")
+    newdf = df[df['sales_region_code'] == 101]
+    X_valid, y_valid = newdf[(df['D'] >= 1176) & (newdf['D'] < 1207)].drop('ord_qty', axis=1), \
+                       newdf[(df['D'] >= 1176) & (newdf['D'] < 1207)]['ord_qty']
+    s = model.predict(X_valid)
+    x_axis = np.linspace(1, len(y_valid), len(y_valid))
+    font1 = {'family': 'SimSun', 'weight': 'normal', 'size': 20, }
+    colors = ['black', 'green', 'yellow', 'blue', 'cyan', 'red', 'orange', 'pink']
+    plt.figure(dpi=300, figsize=(28, 12))
+
+    plt.plot(x_axis[:200], y_valid[:200])
+    plt.plot(x_axis[:200], s[:200])
+    plt.legend(['true', 'prediction'], prop={'size': 20})
+    # plt.scatter(x_data,y_data_yuemo,color='blue')
+    plt.tick_params(labelsize=20)  # 修改刻度显示大小
+
+
+
+
+
 
 
 if __name__ == '__main__':
-    Add201901()
+    #model()
+    test()
     pass
 
