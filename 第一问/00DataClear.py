@@ -3,7 +3,7 @@ import  pandas as pd
 import  matplotlib.pyplot as plt
 import numpy as np
 def paint_box():
-    data=pd.read_csv("数据/order_train1.csv")
+    data=pd.read_csv("../数据/官方数据_完整版/order_train1.csv")
     # data.boxplot(column="ord_qty",by="item_code")
     plt.boxplot(data["ord_qty"])
     plt.title("ord_qty boxplot")
@@ -36,14 +36,14 @@ def delete_out3sigma(data):
     return data
 
 def clear_data():
-    data = pd.read_csv("数据/order_train1.csv")
+    data = pd.read_csv("../数据/官方数据_完整版/order_train1.csv")
     print(data.info())
     data=delete_out3sigma(data)
     print(data.info())
     data.to_csv("数据/order_train1_clear.csv",index=False)
 
 def paint_clear_box():
-    data=pd.read_csv("数据/order_train1_clear.csv")
+    data=pd.read_csv("../数据/官方数据_清洗版/order_train1_clear.csv")
     # data.boxplot(column="ord_qty",by="item_code")
     plt.boxplot(data["ord_qty"])
     plt.title("ord_qty boxplot")
@@ -54,7 +54,7 @@ def paint_clear_box():
 
 # 没有负数
 def clear_negative_data():
-    data = pd.read_csv("数据/order_train1_clear.csv")
+    data = pd.read_csv("../数据/官方数据_清洗版/order_train1_clear.csv")
     print(data.info())
     data=data[data["ord_qty"]>0]
     data=data[data["item_price"]>0]

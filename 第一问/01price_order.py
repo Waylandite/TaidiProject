@@ -10,7 +10,7 @@ from sklearn.linear_model import LinearRegression
 
 
 def count_prices():
-    data_train = pd.read_csv("数据/order_train1_clear.csv")
+    data_train = pd.read_csv("../数据/官方数据_清洗版/order_train1_clear.csv")
     item_code_list = data_train.item_code.unique()
     print(len(item_code_list))
     map={}
@@ -35,7 +35,7 @@ def count_prices():
     # plt.show()
 # cout_prices()
 def analyse_price_order():
-    data=pd.read_csv("数据/price_order/price_order_.csv")
+    data=pd.read_csv("../数据/price_order/price_order_.csv")
     map1={}
     map2={}
     for row in data.itertuples():
@@ -81,7 +81,7 @@ def paint_price_order(price_list):
     plt.show()
 
 def count_total_price():
-    data=pd.read_csv("数据/order_train1_clear.csv")
+    data=pd.read_csv("../数据/官方数据_清洗版/order_train1_clear.csv")
     price=data.item_price
     qty=data.ord_qty
     result=np.corrcoef(price,qty)
@@ -106,7 +106,7 @@ def count_total_price():
     plt.show()
 
 def calculate_price_order():
-    data = pd.read_csv("数据/order_train1_clear.csv")
+    data = pd.read_csv("../数据/官方数据_清洗版/order_train1_clear.csv")
     price = data.item_price
     qty = data.ord_qty
     price = price.values.reshape(-1, 1)

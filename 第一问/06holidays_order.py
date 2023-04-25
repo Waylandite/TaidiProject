@@ -12,7 +12,7 @@ import holidays
 #通过折线图对比促销期间和非促销期间的平均需求量
 def analayze_day_average():
     # 加载数据集并进行数据预处理
-    data = pd.read_csv('数据/order_train1.csv')
+    data = pd.read_csv('../数据/官方数据_完整版/order_train1.csv')
     data['order_date'] = pd.to_datetime(data['order_date'])
     data['is_holiday'] = data['order_date'].isin(holidays.China(years=[2015, 2016, 2017, 2018]))
     data['is_holiday'] = data['is_holiday'].astype(int)
@@ -31,7 +31,7 @@ def analayze_day_average():
     plt.show()
 def analayze_allyear_average():
         # 加载数据集并进行数据预处理
-        data = pd.read_csv('数据/order_train1.csv')
+        data = pd.read_csv('../数据/官方数据_完整版/order_train1.csv')
         # 计算2016、2017、2018、2019三年的平均ord_qty数据
         data['order_date'] = pd.to_datetime(data['order_date'])
         a = []
@@ -56,7 +56,7 @@ def analayze_allyear_average():
 def analayze_2015year_average():
     plt.rcParams['font.sans-serif'] = ['SimHei']  # 用来正常显示中文标签
     # 加载数据集并进行数据预处理
-    data = pd.read_csv('数据/order_train1.csv')
+    data = pd.read_csv('../数据/官方数据_完整版/order_train1.csv')
     data['order_date'] = pd.to_datetime(data['order_date'])
     #计算2016年的平均需求量
     data_2015 = data[data['order_date'].dt.year == 2015]
@@ -97,7 +97,7 @@ def analayze_2015year_average():
 def analayze_2016year_average():
     plt.rcParams['font.sans-serif'] = ['SimHei']  # 用来正常显示中文标签
     # 加载数据集并进行数据预处理
-    data = pd.read_csv('数据/order_train1.csv')
+    data = pd.read_csv('../数据/官方数据_完整版/order_train1.csv')
     data['order_date'] = pd.to_datetime(data['order_date'])
     #计算2016年的平均需求量
     data_2016 = data[data['order_date'].dt.year == 2016]
@@ -139,7 +139,7 @@ def analayze_2016year_average():
 def analayze_2017year_average():
     plt.rcParams['font.sans-serif'] = ['SimHei']  # 用来正常显示中文标签
     # 加载数据集并进行数据预处理
-    data = pd.read_csv('数据/order_train1.csv')
+    data = pd.read_csv('../数据/官方数据_完整版/order_train1.csv')
     data['order_date'] = pd.to_datetime(data['order_date'])
     #计算2017年的平均需求量
     data_2017 = data[data['order_date'].dt.year == 2017]
@@ -182,7 +182,7 @@ def analayze_2017year_average():
 def analayze_2018year_average():
     plt.rcParams['font.sans-serif'] = ['SimHei']  # 用来正常显示中文标签
     # 加载数据集并进行数据预处理
-    data = pd.read_csv('数据/order_train1.csv')
+    data = pd.read_csv('../数据/官方数据_完整版/order_train1.csv')
     data['order_date'] = pd.to_datetime(data['order_date'])
     #计算2018年的平均需求量
     data_2018 = data[data['order_date'].dt.year == 2018]

@@ -3,101 +3,80 @@ import seaborn as sns
 import pandas as pd
 import numpy as np
 import warnings
-import datetime
 from lightgbm import LGBMRegressor
 from chinese_calendar import is_workday
+from 第二问.工具类.optimal_bins import optimal_bins
 import joblib
 warnings.filterwarnings("ignore")
 #数据读取
-df = pd.read_csv('数据/order_train4.csv',encoding='utf-8')
+df = pd.read_csv('../数据/order_train4.csv', encoding='utf-8')
 
-#对价格进行分箱的函数
-from scipy.stats import stats
-def optimal_bins(Y, X, n):
-    """
-    :Y  目标变量
-    ：X  待分箱特征
-    ：n 分箱数初始值
-    return : 统计值，分箱边界值列表、woe值、iv值
-    """
-    r = 0  # xia相关系数的初始值
-    total_bad = Y.sum()  # 总的坏样本数
-    total_good = Y.count() - total_bad  # 总的好样本数
-    # 分箱过程
-    while np.abs(r) < 1:  # 相关系数的绝对值等于1结束循环，循环目的找寻最好正反相关性
-        # df1中的bin为给X分箱对应的结果
-        df1 = pd.DataFrame({'X': X, 'Y': Y, 'bin': pd.qcut(X, n, duplicates='drop')})  # drop表示删除重复元素
-        # 将df1基于箱子进行分组
-        df2 = df1.groupby('bin')
-        # r返回的是df1对箱子分组后，每组数据X的均值的相关系数，如果系数不为正负1，则减少分箱的箱数
-        r, p = stats.spearmanr(df2.mean().X, df2.mean().Y)  # 计算相关系数
-        n = n - 1
-    cut = [0]  # 分箱边界值列表
-    for i in range(1, n + 2):  # i的取值范围是1->（n+1），n+1是分箱的数量
-        qua = X.quantile(i / (n + 1))  # quantile把给定的乱序的数值有小到大并列分成n等份，参数表述取出第百分之多少大小的数值
-        # i的取值范围是1->n 1/n.2/n 3/n...n/n
-        cut.append(round(qua, 6))
-    return cut
 
-#数据处理函数
-def data_processing():
-    #构造D列表，D列表是对应的天数
-    dt1 = pd.date_range(start="20150901", end="20181220", freq="D")
-    dicts = {}
+#数据处理函数，将2015年到2018年的数据进行处理
+def dataProcessing():
+    #读取官方原始数据
+    train1DF = pd.read_csv('../数据/官方数据_完整版/order_train1.csv', encoding='utf-8')
+    #构造天数排序范围
+    #Days对应的天数,2015年9月1日定义为Days=1，也就是第一天
+    dateList = pd.date_range(start="20150901", end="20181220", freq="D")
+    daysList = {}
     i = 1
-    for date in dt1:
-        dicts[str(date).split(' ')[0]] = i
+    for date in dateList:
+        daysList[str(date).split(' ')[0]] = i
         i += 1
-    df['D'] = df['order_date'].map(dicts)
-    #构造是否为促销的列表
-    df['order_date'] = pd.to_datetime(df['order_date'])
-    list_sales_promotion = ['1-1', '4-1', '2-14', '3-1', '3-8', '4-11', '5-1', '6-1', '6-18', '11-11', '12-12']
-    sales_promotion = []
-    for index,row in df.iterrows():
+    train1DF['DaysRange'] = train1DF['order_date'].map(daysList)
+    #构造促销列表
+    #如果是促销日，对应的值为1，否则为0
+    train1DF['order_date'] = pd.to_datetime(train1DF['order_date'])
+    salesPromotionDate = ['1-1', '4-1', '2-14', '3-1', '3-8', '4-11', '5-1', '6-1', '6-18', '11-11', '12-12']
+    salesPromotionList = []
+    for index,row in train1DF.iterrows():
         str_date = str(row['order_date'].month) + '-' + str(row['order_date'].day)
-        if str_date in list_sales_promotion:
-            sales_promotion.append(1)
+        if str_date in salesPromotionDate:
+            salesPromotionList.append(1)
         else:
-            sales_promotion.append(0)
-    df['promotion'] = sales_promotion
-    #对价格进行分箱
-    cut_bins = optimal_bins(df.ord_qty, df.item_price, n=10)
-    df['price_range'] = pd.cut(df['item_price'], cut_bins, labels=[x for x in range(len(cut_bins) - 1)])
-    # 销售渠道进行编码处理
-    dict_qudao = {'offline': 0, 'online': 1}
-    df.sales_chan_name = df.sales_chan_name.map(dict_qudao)
-    # 对月初，月中、月末进行编码处理
-    dict_moth = {'月初': 0, '月中': 1, '月末': 2}
-    month = []
-    for index, row in df.iterrows():
+            salesPromotionList.append(0)
+    train1DF['promotion'] = salesPromotionList
+    #构造价格区间列表
+    cut_bins = optimal_bins(train1DF.ord_qty, train1DF.item_price, n=10)
+    train1DF['price_range'] = pd.cut(train1DF['item_price'], cut_bins, labels=[x for x in range(len(cut_bins) - 1)])
+    # 销售渠道列表
+    channelDict = {'offline': 0, 'online': 1}
+    train1DF.sales_chan_name = train1DF.sales_chan_name.map(channelDict)
+    #构造月段列表
+    #'月初': 0, '月中': 1, '月末': 2
+    monthList = []
+    for index, row in train1DF.iterrows():
         if row['order_date'].day <= 10:
-            month.append('0')
+            monthList.append('0')
         elif row['order_date'].day > 10 and row['order_date'].day <= 20:
-            month.append('1')
+            monthList.append('1')
         elif row['order_date'].day > 20 :
-            month.append('2')
-    df['month_time_period'] = sales_promotion
-    # 对季节进行编码处理
-    dict_season = {'春': 0, '夏': 1, '秋': 2, '冬': 3}
-    season=[]
-    for index, row in df.iterrows():
+            monthList.append('2')
+    train1DF['monthe_period'] = monthList
+    # 构造季节列表
+    #'春': 0, '夏': 1, '秋': 2, '冬': 3
+    seasonList=[]
+    for index, row in train1DF.iterrows():
         if row['order_date'].month==3 or row['order_date'].month==4 or row['order_date'].month==5:
-            season.append('0')
+            seasonList.append('0')
         elif row['order_date'].month==6 or row['order_date'].month==7 or row['order_date'].month==8:
-            season.append('1')
+            seasonList.append('1')
         elif row['order_date'].month==9 or row['order_date'].month==10 or row['order_date'].month==11:
-            season.append('2')
+            seasonList.append('2')
         elif row['order_date'].month==12 or row['order_date'].month==1 or row['order_date'].month==2:
-            season.append('3')
-    df['seaon'] = season
-    # 对星期几进行编码处理
-    df['day_of_week'] = df.order_date.dt.weekday  # 0-6  {0, 1, 2, 3, 4, 5, 6}
-    # 对是否工作日进行编码处理
-    df['is_workday'] = df['order_date'].map(lambda x: is_workday(x))
-    dict_is_workday = {False: 0, True: 1}
-    df['is_workday'] = df.is_workday.map(dict_is_workday)
-    #保存数据到tran2文件
-    df.to_csv('数据/order_train2.csv', index=False, encoding='utf-8')
+            seasonList.append('3')
+    train1DF['seaon'] = seasonList
+    #构造星期列表
+    #星期天-星期一分别是：0-6
+    train1DF['day_of_week'] = train1DF.order_date.dt.weekday
+    #构造工作日列表
+    #工作日：1，非工作日：0
+    train1DF['workday'] =train1DF['order_date'].map(lambda x: is_workday(x))
+    workdayDict= {False: 0, True: 1}
+    train1DF['workday'] = train1DF.is_workday.map(workdayDict)
+    #保存数据到EncodedTrainData_2015_2018文件
+    train1DF.to_csv('数据/过程中数据/EncodedTrainData_2015_2018.csv', index=False, encoding='utf-8')
 
 #构造2019年1月的数据
 def Add201901():
@@ -120,8 +99,6 @@ def Add201901():
     tempdf['first_cate_code'] = tempdf['combination'].str.split('_', expand=True)[1]
     tempdf['second_cate_code'] = tempdf['combination'].str.split('_', expand=True)[2]
     tempdf['item_code'] = tempdf['combination'].str.split('_', expand=True)[3]
-    import chinese_calendar
-    import datetime
     tempdf['order_date'] = pd.to_datetime(tempdf['order_date'])  # 对日期列进行日期格式转换
     # 构造是否为促销的列表
     tempdf['order_date'] = pd.to_datetime(tempdf['order_date'])
@@ -236,13 +213,14 @@ def feature_engineering():
     df.to_pickle('数据/train_data.pkl')
     df.to_csv('数据/train_data.csv', index=False, encoding='utf-8')
 
-# 构建模型并训练
-data = pd.read_pickle('数据/train_data.pkl')
-valid = data[(data['D'] >= 1176) & (data['D'] <= 1207)][['item_code', 'D', 'ord_qty']]
-test = data[data['D'] > 1207][['item_code', 'D', 'ord_qty']]  # 作为待预测的数据
-eval_preds = test['ord_qty']  ## 待预测 目前全为0
-valid_preds = valid['ord_qty']  # 这是已有真实标签需求量1175到1206，31天间隔的真实数据
+
 def model():
+    # 构建模型并训练
+    data = pd.read_pickle('数据/train_data.pkl')
+    valid = data[(data['D'] >= 1176) & (data['D'] <= 1207)][['item_code', 'D', 'ord_qty']]
+    test = data[data['D'] > 1207][['item_code', 'D', 'ord_qty']]  # 作为待预测的数据
+    eval_preds = test['ord_qty']  ## 待预测 目前全为0
+    valid_preds = valid['ord_qty']  # 这是已有真实标签需求量1175到1206，31天间隔的真实数据
 
 
     states = [101, 102, 103, 104, 105]
@@ -279,7 +257,7 @@ def model():
         continue
 def validModel():
     data = pd.read_pickle('数据/train_data.pkl')
-    model = joblib.load("模型/model_101.pkl")
+    model = joblib.load("../模型/model_101.pkl")
     newdf = data[data['sales_region_code'] == 101]
     X_valid, y_valid = newdf[(df['D'] >= 1176) & (newdf['D'] <= 1207)].drop('ord_qty', axis=1), \
                        newdf[(df['D'] >= 1176) & (newdf['D'] <= 1207)]['ord_qty']
@@ -302,7 +280,7 @@ def model_feature_importance():
     data = pd.read_pickle('数据/train_data.pkl')
     feature_importance_df = pd.DataFrame()
     features = [f for f in data.columns if f != 'ord_qty']
-    for filename in os.listdir('模型/'):
+    for filename in os.listdir('../模型/'):
         print(filename)
         if 'model' in filename:
             # load model
@@ -317,33 +295,33 @@ def model_feature_importance():
 def forecast20191():
 
     result = []
-    for v in eval_preds:
-        if v < 0:
-            result.append(0)  # 预测值里有负值，这是不可能的，所有我们用0来代表异常值，产生这负数多半是因为训练时，对应产品的时间序列数据很少
-        else:
-            result.append(round(v, 0))
-    #读取之前构造好的19年1月数据：
-    df_sub = pd.read_csv('数据/order_train3.csv')
-    df_sub['ord_qty'] = result  # 把预测的订单需求量替换
-    df_sub.to_csv('数据/result1.csv', index=False)
-
-    result_df1 = df_sub.loc[df_sub['D'] >= 1219]  # 定位到19年1月的数据
-    result_df = result_df1[['order_date', 'sales_region_code', 'item_code', 'first_cate_code', 'second_cate_code', 'ord_qty']]  # 筛选出需要的列
-
-    #计算出一月总销售额
-    # 制作透视表得到所有产品19年1月的需求量
-    result_df = pd.pivot_table(result_df, index=['sales_region_code', 'first_cate_code', 'second_cate_code', 'item_code'], columns='order_date',
-                               values='ord_qty', aggfunc=np.sum, fill_value=0).reset_index()
-    result_df.iloc[:, 4:]
-    result_df['1monthly_need'] = result_df.iloc[:, 4:].sum(axis=1)  # 对0，1列按行求和，生成新列
-    result_df = result_df[['sales_region_code', 'first_cate_code', 'second_cate_code', 'item_code', '1monthly_need']]
-    predict_df = pd.read_csv("数据/predict_sku1.csv")
-    predict_df.columns = ['sales_region_code', 'item_code', 'first_cate_code', 'second_cate_code']
-    s = pd.merge(predict_df, result_df, how='inner')
-    s.to_csv('数据/1_monthly_predict_sku1.csv', index=False)
+    # for v in eval_preds:
+    #     if v < 0:
+    #         result.append(0)  # 预测值里有负值，这是不可能的，所有我们用0来代表异常值，产生这负数多半是因为训练时，对应产品的时间序列数据很少
+    #     else:
+    #         result.append(round(v, 0))
+    # #读取之前构造好的19年1月数据：
+    # df_sub = pd.read_csv('../数据/order_train3.csv')
+    # df_sub['ord_qty'] = result  # 把预测的订单需求量替换
+    # df_sub.to_csv('数据/result1.csv', index=False)
+    #
+    # result_df1 = df_sub.loc[df_sub['D'] >= 1219]  # 定位到19年1月的数据
+    # result_df = result_df1[['order_date', 'sales_region_code', 'item_code', 'first_cate_code', 'second_cate_code', 'ord_qty']]  # 筛选出需要的列
+    #
+    # #计算出一月总销售额
+    # # 制作透视表得到所有产品19年1月的需求量
+    # result_df = pd.pivot_table(result_df, index=['sales_region_code', 'first_cate_code', 'second_cate_code', 'item_code'], columns='order_date',
+    #                            values='ord_qty', aggfunc=np.sum, fill_value=0).reset_index()
+    # result_df.iloc[:, 4:]
+    # result_df['1monthly_need'] = result_df.iloc[:, 4:].sum(axis=1)  # 对0，1列按行求和，生成新列
+    # result_df = result_df[['sales_region_code', 'first_cate_code', 'second_cate_code', 'item_code', '1monthly_need']]
+    # predict_df = pd.read_csv("../数据/官方数据_完整版/predict_sku1.csv")
+    # predict_df.columns = ['sales_region_code', 'item_code', 'first_cate_code', 'second_cate_code']
+    # s = pd.merge(predict_df, result_df, how='inner')
+    # s.to_csv('数据/1_monthly_predict_sku1.csv', index=False)
 #预测2019年2月份的销售量并记录
 def forecast20192():
-    df = pd.read_csv('数据/result1.csv', encoding='utf-8')
+    df = pd.read_csv('../数据/result1.csv', encoding='utf-8')
     df['combination'] = df['sales_region_code'].astype(str) + '_' + df['first_cate_code'].astype(str) + '_' + df['second_cate_code'].astype(str) + '_' + df[
         'item_code'].astype(str)
     # 从2019-2-1到2019-2-28日的数据
@@ -364,8 +342,6 @@ def forecast20192():
     tempdf['first_cate_code'] = tempdf['combination'].str.split('_', expand=True)[1]
     tempdf['second_cate_code'] = tempdf['combination'].str.split('_', expand=True)[2]
     tempdf['item_code'] = tempdf['combination'].str.split('_', expand=True)[3]
-    import chinese_calendar
-    import datetime
     tempdf['order_date'] = pd.to_datetime(tempdf['order_date'])  # 对日期列进行日期格式转换
     # 构造是否为促销的列表
     tempdf['order_date'] = pd.to_datetime(tempdf['order_date'])
@@ -450,7 +426,6 @@ def forecast20192():
 
 
 if __name__ == '__main__':
-    model()
-    forecast20191()
+    dataProcessing()
     pass
 

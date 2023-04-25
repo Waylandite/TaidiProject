@@ -9,7 +9,7 @@ import seaborn as sns
 from sklearn.linear_model import LinearRegression
 
 def count_first_cate_prices():
-    data_train = pd.read_csv("数据/order_train1_clear.csv")
+    data_train = pd.read_csv("../数据/官方数据_清洗版/order_train1_clear.csv")
     first_cate_code = data_train["first_cate_code"].unique()
     map={}
     for x in first_cate_code:
@@ -27,7 +27,7 @@ def count_first_cate_prices():
     plt.show()
 
 def count_second_cate_prices():
-    data_train = pd.read_csv("数据/order_train1_clear.csv")
+    data_train = pd.read_csv("../数据/官方数据_清洗版/order_train1_clear.csv")
     first_cate_code = data_train["second_cate_code"].unique()
     print(first_cate_code)
     map={}
@@ -48,7 +48,7 @@ def count_second_cate_prices():
 
 def detail_second_cate():
     # 读取数据
-    data = pd.read_csv("数据/order_train1_clear.csv")
+    data = pd.read_csv("../数据/官方数据_清洗版/order_train1_clear.csv")
     # 按照品类分组，计算每个品类的订单需求量的平均值、中位数、标准差等统计指标
     category_demand = data.groupby('second_cate_code')['ord_qty'].agg(['mean', 'median', 'std'])
 
@@ -68,7 +68,7 @@ def detail_second_cate():
 
 def detail_first_cate():
     # 读取数据
-    data = pd.read_csv("数据/order_train1_clear.csv")
+    data = pd.read_csv("../数据/官方数据_清洗版/order_train1_clear.csv")
     # 按照品类分组，计算每个品类的订单需求量的平均值、中位数、标准差等统计指标
     category_demand = data.groupby('first_cate_code')['ord_qty'].agg(['mean', 'median', 'std'])
 

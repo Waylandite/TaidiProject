@@ -3,7 +3,7 @@ import numpy
 import  matplotlib.pyplot as plt
 import  matplotlib
 def analyse_region_order():
-    data = pd.read_csv("数据/order_train1.csv")
+    data = pd.read_csv("../数据/官方数据_完整版/order_train1.csv")
     region_list=data.groupby("sales_region_code")
     map = {}
     for value,group in region_list:

@@ -38,7 +38,7 @@ def classify_by_everyyear(data):
 
 if __name__ == '__main__':
     # 读取csv文件
-    data = pd.read_csv('数据/order_train1.csv')
+    data = pd.read_csv('../数据/官方数据_完整版/order_train1.csv')
 
     # classify_by_month(data)
     # classify_by_year(data)

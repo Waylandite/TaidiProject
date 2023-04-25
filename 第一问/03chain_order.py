@@ -6,7 +6,7 @@ import  matplotlib
 import seaborn as sns
 #所有产品的线上线下销售情况对比
 def analyse_bar():
-    data = pd.read_csv("数据/order_train1.csv")
+    data = pd.read_csv("../数据/官方数据_完整版/order_train1.csv")
     region_list = data.groupby("sales_chan_name")
     map = {}
     for value, group in region_list:
@@ -21,7 +21,7 @@ def analyse_bar():
     print(multiple)
 def analyse_density():
     # 读取数据
-    data = pd.read_csv('数据/order_train1.csv')
+    data = pd.read_csv('../数据/官方数据_完整版/order_train1.csv')
     # 提取线上和线下订单需求量
     online_ord_qty = data[data["sales_chan_name"] == "online"]["ord_qty"]
     offline_ord_qty = data[data["sales_chan_name"] == "offline"]["ord_qty"]
@@ -36,13 +36,13 @@ def analyse_density():
     plt.show()
 
 def analyse_scatter():
-    train_data = pd.read_csv('数据/order_train1.csv')
+    train_data = pd.read_csv('../数据/官方数据_完整版/order_train1.csv')
     # 绘制散点图
     sns.scatterplot(data=train_data, x="item_price", y="ord_qty", hue="sales_chan_name")
     plt.show()
 #不同产品大类下产品的线上线下销售情况对比
 def analyse_bar_by_first_cate_code():
-    data = pd.read_csv("数据/order_train1.csv")
+    data = pd.read_csv("../数据/官方数据_完整版/order_train1.csv")
     chan_list = data.groupby("sales_chan_name")
     map1 = {}
     map2 = {}

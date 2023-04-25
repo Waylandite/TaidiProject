@@ -7,7 +7,7 @@ promotions = ['2015/6/18', '2015/11/11', '2016/6/18', '2016/11/11', '2017/6/18',
 
 def total_order():
     # 2. 加载并预处理数据
-    df = pd.read_csv('数据/order_train1_clear.csv', parse_dates=['order_date'], dtype={'sales_region_code': 'str'})
+    df = pd.read_csv('../数据/官方数据_清洗版/order_train1_clear.csv', parse_dates=['order_date'], dtype={'sales_region_code': 'str'})
     df['is_promotion'] = df['order_date'].isin(promotions).astype(int)
     df_agg = df.groupby(['order_date'])['ord_qty'].sum().reset_index()
 
@@ -26,7 +26,7 @@ def total_order():
     plt.show()
 
 def online_order():
-    df = pd.read_csv('数据/order_train1_clear.csv', parse_dates=['order_date'], dtype={'sales_region_code': 'str'})
+    df = pd.read_csv('../数据/官方数据_清洗版/order_train1_clear.csv', parse_dates=['order_date'], dtype={'sales_region_code': 'str'})
     df=df[df["sales_chan_name"]=="online"]
     df['is_promotion'] = df['order_date'].isin(promotions).astype(int)
     df_agg = df.groupby(['order_date'])['ord_qty'].sum().reset_index()
@@ -45,7 +45,7 @@ def online_order():
     ax.set_title('Effect of promotions on online order quantity')
     plt.show()
 def offline_order():
-    df = pd.read_csv('数据/order_train1_clear.csv', parse_dates=['order_date'], dtype={'sales_region_code': 'str'})
+    df = pd.read_csv('../数据/官方数据_清洗版/order_train1_clear.csv', parse_dates=['order_date'], dtype={'sales_region_code': 'str'})
     df=df[df["sales_chan_name"]=="offline"]
     df['is_promotion'] = df['order_date'].isin(promotions).astype(int)
     df_agg = df.groupby(['order_date'])['ord_qty'].sum().reset_index()

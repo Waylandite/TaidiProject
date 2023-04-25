@@ -3,7 +3,7 @@ import numpy
 import  matplotlib.pyplot as plt
 import  matplotlib
 
-data_train=pandas.read_csv("数据/order_train1.csv")
+data_train=pandas.read_csv("../数据/官方数据_完整版/order_train1.csv")
 # print(data.head())
 print(data_train.info())
 # data2=data[(data["item_code"]==20011)]
