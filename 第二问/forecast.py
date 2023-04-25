@@ -552,7 +552,7 @@ def addDataOf201903():
     train15_1903DF = pd.read_csv('../数据/过程中数据/EncodedTrainData_2015_2018.csv', encoding='utf-8')
     train15_1903DF['combination'] = train15_1903DF['sales_region_code'].astype(str) + '_' + train15_1903DF['first_cate_code'].astype(str) + '_' + train15_1903DF['second_cate_code'].astype(str) + '_' + train15_1903DF[
         'item_code'].astype(str)
-    dateList = pd.date_range(start="20190201", end="20190331", freq="D")
+    dateList = pd.date_range(start="20190301", end="20190331", freq="D")
     dates = []
     demandList = []
     combinationList = []
@@ -689,10 +689,90 @@ def featureEngineeringOf2015_201903():
     train15_1903DF.drop(['daily_avg_need', 'avg_need'], axis=1, inplace=True)
     train15_1903DF.drop('order_date', axis=1, inplace=True)
     #保存数据
-    featureedTrain15_1902DF = train15_1903DF[train15_1903DF['days_range']>=60]
-    featureedTrain15_1902DF.to_pickle('../数据/过程中数据/FeaturedEncodedTrainData_2015_201903.pkl')
-    featureedTrain15_1902DF.to_csv('../数据/过程中数据/FeaturedEncodedTrainData_2015_201903.csv', index=False, encoding='utf-8')
+    featureedTrain15_1903DF = train15_1903DF[train15_1903DF['days_range']>=60]
+    featureedTrain15_1903DF.to_pickle('../数据/过程中数据/FeaturedEncodedTrainData_2015_201903.pkl')
+    featureedTrain15_1903DF.to_csv('../数据/过程中数据/FeaturedEncodedTrainData_2015_201903.csv', index=False, encoding='utf-8')
+
+
+#读取编码以及特征工程后的2015年1月到2018年月的数据
+def ModelPredict201903():
+    # 读取编码以及特征工程后的2015年1月到2018年月的数据
+    Train15_1903DF = pd.read_csv('../数据/过程中数据/FeaturedEncodedTrainData_2015_201903.csv', encoding='utf-8')
+    # 划分验证集和测试集
+    test = Train15_1903DF[(Train15_1903DF['days_range'] >= 1278)][
+        ['item_code', 'days_range', 'ord_qty']]
+    # 测试集训练预测和验证集预测结果
+    testResult = test['ord_qty']  # 这是已有真实标签需求量1175到1206，31天间隔的真实数据
+    # 对五个销售区域分别建模并进行训练
+    regionList = [101, 102, 103, 104, 105]
+    for region in regionList:
+        #try:
+            regionedTrain15_1903DF = Train15_1903DF[Train15_1903DF['sales_region_code'] == region]
+            # 划分训练集和验证集
+            X_train, y_train = regionedTrain15_1903DF[regionedTrain15_1903DF['days_range'] < 1278].drop('ord_qty', axis=1), \
+                               regionedTrain15_1903DF[regionedTrain15_1903DF['days_range'] < 1278]['ord_qty']
+            X_valid, y_valid = regionedTrain15_1903DF[(regionedTrain15_1903DF['days_range'] >= 1278)].drop('ord_qty', axis=1), \
+                               regionedTrain15_1903DF[(regionedTrain15_1903DF['days_range'] >= 1278)]['ord_qty']
+            # 构建模型并模型
+            model = LGBMRegressor(
+                n_estimators=1000,
+                learning_rate=0.3,
+                subsample=0.8,
+                colsample_bytree=0.8,
+                max_depth=8,
+                num_leaves=50,
+                min_child_weight=300
+            )
+            print('*****Prediction for 销售区域: {}*****'.format(region))
+            model.fit(X_train, y_train, eval_set=[(X_train, y_train), (X_valid, y_valid)],
+                      eval_metric='rmse', verbose=20, early_stopping_rounds=20)
+            testResult[X_valid.index] = model.predict(X_valid)
+            # 保存模型文件数据
+            joblib.dump(model, "../模型/" + "model_" + str(region) + ".pkl")
+            del model, X_train, y_train, X_valid, y_valid
+        # except:
+        #     del model, X_train, y_train, X_valid, y_valid
+        #     continue
+    #预测完成2019年2月份的订单需求量后，将结果保存到文件中
+    result = []
+    for i in testResult:
+        if i < 0:
+            result.append(0)
+        else:
+            result.append(round(i, 0))
+    #读取之前构造好的19年1月数据,将预测的订单需求量替换
+    train201903DF = pd.read_csv('../数据/过程中数据/EncodedTrainData_201903.csv')
+    train201903DF['ord_qty'] = result  # 把预测的订单需求量替换
+    train201903DF.to_csv('../数据/结果数据/ForecastedEncodedTrainData_201903.csv', index=False)
+    #将预测后的2019年1月的数据合并到官方存在的的2015年1月到2018年12月的数据中
+    tain2015_2018DF = pd.read_csv('../数据/过程中数据/EncodedTrainData_2015_2018.csv')
+    PredictedEncodedTrainData_2015_201901DF = pd.concat([tain2015_2018DF, train201903DF], axis=0)
+    PredictedEncodedTrainData_2015_201901DF.to_csv('../数据/过程中数据/PredictedEncodedTrainData_2015_201903.csv')
+    #计算出而月总销售额
+    forecasted201903DF = train201903DF.loc[train201903DF['days_range'] >= 1278]  # 定位到19年3月的数据
+    forecasted201903DF = forecasted201903DF[['order_date', 'sales_region_code', 'item_code', 'first_cate_code', 'second_cate_code', 'ord_qty']]  # 筛选出需要的列
+    resultDF = pd.pivot_table(forecasted201903DF, index=['sales_region_code', 'first_cate_code', 'second_cate_code', 'item_code'], columns='order_date',
+                               values='ord_qty', aggfunc=np.sum, fill_value=0).reset_index()
+    resultDF['March_demand'] = resultDF.iloc[:, 4:].sum(axis=1)  # 对0，1列按行求和，生成新列
+    resultDF = resultDF[['sales_region_code', 'first_cate_code', 'second_cate_code', 'item_code', 'March_demand']]
+    #读取预测的sku1的数据
+    predictDF = pd.read_csv("../数据/官方数据_完整版/predict_sku1.csv")
+    predictDF.columns = ['sales_region_code', 'item_code', 'first_cate_code', 'second_cate_code']
+    s = pd.merge(predictDF, resultDF, how='inner')
+    s.to_csv('../数据/结果数据/ForecastedData_201903.csv', index=False)
+#合并1月2月3月的数据
+def Merge():
+    Precited201901DF = pd.read_csv('../数据/结果数据/ForecastedData_201901.csv')
+    Precited201902DF = pd.read_csv('../数据/结果数据/ForecastedData_201902.csv')
+    Precited201903DF = pd.read_csv('../数据/结果数据/ForecastedData_201903.csv')
+    PrecitedDF = pd.merge(Precited201901DF, Precited201902DF)
+    PrecitedDF = pd.merge(PrecitedDF, Precited201903DF)
+    submit_df = PrecitedDF[['sales_region_code', 'item_code', 'January_demand', 'February_demand', 'March_demand']]
+    submit_df.columns = ['sales_region_code', 'item_code', '2019年1月预测需求量', '2019年2月预测需求量', '2019年3月预测需求量']
+    # 保存
+    submit_df.to_csv('../数据/结果数据/提交结果.csv', index=False)
+
 if __name__ == '__main__':
-    addDataOf201903()
+    Merge()
     pass
 
